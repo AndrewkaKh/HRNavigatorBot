@@ -25,3 +25,5 @@ env/
 *.tmp
 .env
 bot/config.py
+database/check_db.py
+database/reset_db.py
