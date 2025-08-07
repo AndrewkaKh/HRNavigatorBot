@@ -1,0 +1,27 @@
+# created by virtualenv automatically
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Виртуальное окружение
+.venv/
+venv/
+ENV/
+env/
+
+# PyCharm
+.idea/
+*.iml
+
+# Mac / Linux
+.DS_Store
+
+# Логи, временные файлы
+*.log
+*.tmp
+.env
+bot/config.py
