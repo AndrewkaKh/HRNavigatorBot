@@ -1,7 +1,8 @@
 from datetime import datetime
+
 from sqlalchemy import (
     Integer, String, BigInteger,
-    DateTime, func
+    DateTime, func, Text
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -21,4 +22,13 @@ class Student(Base):
     channel_id:   Mapped[int | None] = mapped_column(BigInteger)
     created_at:   Mapped[datetime]   = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+class Vacancy(Base):
+    __tablename__ = "vacancies"
+
+    name:        Mapped[str] = mapped_column(String(200), primary_key=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at:  Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
     )

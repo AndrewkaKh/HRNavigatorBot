@@ -7,6 +7,7 @@ from telegram.ext import (
     ConversationHandler, ContextTypes, CallbackContext
 )
 
+from bot.config import ADMIN_IDS
 from database.db import SessionLocal
 
 
@@ -21,18 +22,31 @@ async def start(update: Update, context: CallbackContext):
     await update.message.reply_text(greeting)
 
 async def help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Команда /help. Вывод списка доступных команд.
-    """
-    commands = [
-        ("/start", "Приветствие и запуск бота"),
-        ("/help", "Список доступных команд"),
-        ("/apply", "Начать заполнение анкеты"),
-        ("/cancel", "Отмена текущей операции"),
-    ]
-    help_text = "Доступные команды:\n" + "\n".join(f"{cmd} — {desc}" for cmd, desc in commands)
-    await update.message.reply_text(help_text)
+    if is_admin(update):
+        cmds = [
+            ("/help",             "Список админ-команд"),
+            ("/vacancies",        "Посмотреть список вакансий"),
+            ("/vacancy_add",      "Добавить вакансию"),
+            ("/vacancy_del",      "Удалить вакансию"),
+            ("/comment <id>",     "Добавить пометку студенту"),
+            ("/export_students",  "Экспорт студентов в XLSX"),
+            ("/cancel",           "Отмена текущей операции"),
+        ]
+    else:
+        cmds = [
+            ("/start",       "Приветствие"),
+            ("/help",        "Список команд"),
+            ("/vacancies",   "Список доступных вакансий"),
+            ("/apply",       "Заполнить анкету"),
+            ("/cancel",      "Отмена текущей операции"),
+        ]
+    text = "Доступные команды:\n" + "\n".join(f"{c} — {d}" for c, d in cmds)
+    await update.message.reply_text(text)
 
 async def cancel(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Заполнение прервано.")
     return ConversationHandler.END
+
+def is_admin(update) -> bool:
+    user = update.effective_user
+    return bool(user and user.id in ADMIN_IDS)

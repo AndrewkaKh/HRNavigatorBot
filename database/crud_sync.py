@@ -1,7 +1,8 @@
 from typing import Optional
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
-from database.models import Student
+from database.models import Student, Vacancy
 from database.db import SessionLocal
 
 def upsert_student_sync(
@@ -37,3 +38,8 @@ def upsert_student_sync(
         )
         session.execute(stmt)
         session.commit()
+
+def list_vacancies_sync() -> list[Vacancy]:
+    with SessionLocal() as s:
+        stmt = select(Vacancy).order_by(Vacancy.created_at.desc())
+        return s.scalars(stmt).all()

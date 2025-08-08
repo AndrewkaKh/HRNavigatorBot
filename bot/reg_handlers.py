@@ -1,5 +1,6 @@
 from telegram.ext import ConversationHandler, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 from bot.Handlers.report import start, cancel, help
+from bot.Handlers.vacancies import cmd_vacancies, vacancies_callback
 from bot.Handlers.scalars import cmd_apply, scalar_answer, choose_field
 from bot.Handlers.tables import tbl_cell_answer, tbl_callback, choose_edit_tables_callback
 from bot.Handlers.doc import doc_callback, doc_edit_menu_callback
@@ -13,7 +14,13 @@ def register_handlers(application):
     """
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help))
-    #application.add_handler(CommandHandler("jobs", start)) возможно потребуется описание ConversationHandler
+
+    application.add_handler(CommandHandler("vacancies", cmd_vacancies))
+    application.add_handler(CallbackQueryHandler(
+        vacancies_callback,
+        pattern=r"^vac:(page:\d+|open:\d+:\d+|back:\d+)$"
+    ))
+
     conv = ConversationHandler(
         entry_points=[CommandHandler("apply", cmd_apply)],
         states={
