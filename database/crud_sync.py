@@ -43,3 +43,31 @@ def list_vacancies_sync() -> list[Vacancy]:
     with SessionLocal() as s:
         stmt = select(Vacancy).order_by(Vacancy.created_at.desc())
         return s.scalars(stmt).all()
+
+
+def add_vacancy_sync(name: str, description: str) -> bool:
+    """
+    Создаёт вакансию или обновляет описание, если такая уже есть.
+    Возвращает True, если создана новая запись; False, если было обновление.
+    """
+    with SessionLocal() as s:
+        v = s.get(Vacancy, name)  # PK = name
+        if v:
+            v.description = description
+            s.commit()
+            return False  # обновили существующую
+        s.add(Vacancy(name=name, description=description))
+        s.commit()
+        return True  # создали новую
+
+def delete_vacancy_sync(name: str) -> bool:
+    """
+    Удаляет вакансию по имени. Возвращает True, если запись была удалена.
+    """
+    with SessionLocal() as s:
+        v = s.get(Vacancy, name)
+        if not v:
+            return False
+        s.delete(v)
+        s.commit()
+        return True
