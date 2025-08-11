@@ -1,7 +1,7 @@
 from telegram.ext import ConversationHandler, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from bot.Handlers.admin import cmd_vacancy_add, vacancy_add_title, vacancy_add_desc, cmd_vacancy_del, \
-    vacancy_del_callback
+    vacancy_del_callback, cmd_comment, cmd_export_students
 from bot.Handlers.report import start, cancel, help
 from bot.Handlers.vacancies import cmd_vacancies, vacancies_callback
 from bot.Handlers.scalars import cmd_apply, scalar_answer, choose_field
@@ -71,3 +71,6 @@ def register_handlers(application):
     # /vacancy_del — список + callback
     application.add_handler(CommandHandler("vacancy_del", cmd_vacancy_del))
     application.add_handler(CallbackQueryHandler(vacancy_del_callback, pattern=r"^vacdel_idx:\d+$"))
+
+    application.add_handler(CommandHandler("comment", cmd_comment))
+    application.add_handler(CommandHandler("export_students", cmd_export_students))

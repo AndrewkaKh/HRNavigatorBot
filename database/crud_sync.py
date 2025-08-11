@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from database.models import Student, Vacancy
 from database.db import SessionLocal
+from datetime import datetime
 
 def upsert_student_sync(
     *,
@@ -71,3 +72,29 @@ def delete_vacancy_sync(name: str) -> bool:
         s.delete(v)
         s.commit()
         return True
+
+
+def add_comment_sync(student_id: int, comment: str) -> bool:
+    """Добавляет комментарий к студенту с датой. Возвращает True если студент найден."""
+    with SessionLocal() as s:
+        student = s.get(Student, student_id)
+        if not student:
+            return False
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        formatted_comment = f"{timestamp}: {comment}"
+
+        if student.comments:
+            student.comments = f"{student.comments}\n{formatted_comment}"
+        else:
+            student.comments = formatted_comment
+
+        s.commit()
+        return True
+
+
+def get_all_students_sync() -> list[Student]:
+    """Возвращает всех студентов с их данными."""
+    with SessionLocal() as s:
+        stmt = select(Student).order_by(Student.created_at.desc())
+        return list(s.scalars(stmt).all())

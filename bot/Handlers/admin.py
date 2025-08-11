@@ -1,10 +1,14 @@
 import asyncio
+from io import BytesIO
+import openpyxl
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, CommandHandler, CallbackQueryHandler, filters
 
 from bot.Handlers.report import is_admin
 from bot.config import ADMIN_IDS, V_ADD_TITLE, V_ADD_DESC
-from database.crud_sync import add_vacancy_sync, list_vacancies_sync, delete_vacancy_sync
+from database.crud_sync import add_vacancy_sync, list_vacancies_sync, delete_vacancy_sync, get_all_students_sync, \
+    add_comment_sync
 
 
 async def _guard(update: Update) -> bool:
@@ -111,3 +115,83 @@ async def vacancy_del_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -
                                   reply_markup=_build_del_keyboard(names))
     else:
         await q.message.edit_text(text + "\n\nБольше вакансий нет.")
+
+
+async def cmd_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик команды /comment <id> <текст комментария>"""
+    if not is_admin(update):
+        await update.message.reply_text("❌ Команда доступна только администраторам.")
+        return
+
+    if not update.message or not context.args or len(context.args) < 2:
+        await update.message.reply_text("Использование: /comment <ID студента> <текст комментария>")
+        return
+
+    try:
+        student_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("ID студента должен быть числом")
+        return
+
+    comment_text = " ".join(context.args[1:])
+    success = await asyncio.to_thread(add_comment_sync, student_id, comment_text)
+
+    if success:
+        await update.message.reply_text(f"✅ Комментарий добавлен к студенту с ID {student_id}")
+    else:
+        await update.message.reply_text(f"❌ Студент с ID {student_id} не найден")
+
+
+async def cmd_export_students(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Обработчик команды /export_students - экспорт в XLSX"""
+    if not is_admin(update):
+        await update.message.reply_text("❌ Команда доступна только администраторам.")
+        return
+
+    students = await asyncio.to_thread(get_all_students_sync)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Студенты"
+
+    headers = [
+        "ID",
+        "ФИО",
+        "Телефон",
+        "Контакты",
+        "Комментарии",
+        "Документ",
+        "Дата подачи"
+    ]
+    ws.append(headers)
+
+    for student in students:
+        comments = student.comments.replace("\n", "\r\n") if student.comments else ""
+
+        ws.append([
+            student.id,
+            student.full_name,
+            student.phone,
+            student.social_url or "",
+            comments,
+            student.doc_url or "",
+            student.created_at.strftime("%Y-%m-%d %H:%M")
+        ])
+
+    for col in ws.columns:
+        column = col[0].column_letter
+        ws.column_dimensions[column].width = 20
+
+    ws.column_dimensions["E"].width = 50
+    for row in ws.iter_rows(min_row=2, max_col=7, max_row=len(students) + 1):
+        row[4].alignment = openpyxl.styles.Alignment(wrapText=True)
+
+    excel_file = BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+
+    await update.message.reply_document(
+        document=excel_file,
+        filename=f"students_export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+        caption="Экспорт данных о студентах"
+    )

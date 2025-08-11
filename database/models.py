@@ -20,8 +20,9 @@ class Student(Base):
     file_id:      Mapped[str | None] = mapped_column(String(256))
     message_id:   Mapped[int | None] = mapped_column(Integer)
     channel_id:   Mapped[int | None] = mapped_column(BigInteger)
+    comments:     Mapped[str | None] = mapped_column(Text)
     created_at:   Mapped[datetime]   = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime, server_default=func.now()
     )
 
 class Vacancy(Base):
